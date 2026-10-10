@@ -1,0 +1,22 @@
+# Build outputs and Windows artifacts (this repo ships source only)
+result
+result-*
+*.dll
+*.obj
+*.o
+*.lib
+*.exp
+*.pdb
+
+# Reference binaries and archives are never committed (see docs/PROVENANCE.md)
+*.zip
+*.7z
+*.rar
+*.cab
+reference/
+
+# Local dev
+.direnv/
+__pycache__/
+.dlc-cache/
+.DS_Store

@@ -1,0 +1,64 @@
+name: build
+
+on:
+  push:
+    branches: [publish, main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: build (MSVC x86)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+      - name: Build xlive.dll
+        run: >
+          cl /LD /O2 /W3 /WX /std:clatest /D_CRT_SECURE_NO_WARNINGS
+          /Fe:xlive.dll src\*.c src\xlive.def
+          ws2_32.lib shell32.lib user32.lib
+      - name: Stage package
+        run: |
+          mkdir dist
+          copy xlive.dll dist\
+          copy src\xlive.ini dist\
+          certutil -hashfile dist\xlive.dll SHA256
+      - name: Verify exports (fail on any mismatch)
+        run: |
+          pip install pefile
+          python scripts\check_exports.py dist\xlive.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xlive-msvc
+          path: dist/
+
+  build-linux:
+    name: build (mingw cross)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mingw32
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gcc-mingw-w64-i686
+      - name: Build xlive.dll
+        run: |
+          mkdir -p dist
+          cd src
+          i686-w64-mingw32-gcc -shared -O2 -Wall -Werror -o ../dist/xlive.dll *.c xlive.def \
+            -lws2_32 -lshell32 -luser32 \
+            -Wl,--enable-stdcall-fixup -Wl,--kill-at
+          cp xlive.ini ../dist/
+          ls -l ../dist/xlive.dll
+      - name: Verify exports (fail on any mismatch)
+        run: |
+          python3 -m pip install --break-system-packages -q pefile
+          python3 scripts/check_exports.py dist/xlive.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xlive-mingw
+          path: dist/

@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<packageCollection>
+	<XContent_AllowProfileTransfer>
+		true
+	</XContent_AllowProfileTransfer>
+	<XContent_thumbnail_path>
+		E:\dev\Fable3\PCDLC2Branch\SourceCode\Fable2\LIVE images\X_IMAGEID_GAME.png
+	</XContent_thumbnail_path>
+	<name>
+		DLC xlive removal
+	</name>
+	<XContent_IsMarketplace>
+		true
+	</XContent_IsMarketplace>
+	<XContent_PublisherFlags>
+		0xFFFFFFFF
+	</XContent_PublisherFlags>
+	<XContent_ContentID>
+		0x7D2E4AB2AB0372FCF249555EA9EA61D0D3CE1B5B
+	</XContent_ContentID>
+	<requiredGameVersion>
+		53
+	</requiredGameVersion>
+	<XContent_HasCost>
+		false
+	</XContent_HasCost>
+	<XContent_DashIconPath>
+		E:\dev\Fable3\PCDLC2Branch\SourceCode\Fable2\LIVE images\X_IMAGEID_GAME.png
+	</XContent_DashIconPath>
+	<XContent_PubBitFlags>
+		FFFFFFFF
+	</XContent_PubBitFlags>
+	<XContent_activation_date>
+		01/01/2010
+	</XContent_activation_date>
+	<isLanguagePack>
+		False
+	</isLanguagePack>
+	<XContent_TitleIconPath>
+		E:\dev\Fable3\PCDLC2Branch\SourceCode\Fable2\LIVE images\X_IMAGEID_GAME.png
+	</XContent_TitleIconPath>
+	<XContent_title_id>
+		0x4D53090A
+	</XContent_title_id>
+	<XContent_AllowDeviceTransfer>
+		true
+	</XContent_AllowDeviceTransfer>
+	<XContent_PubOfferingID>
+		ECF0000
+	</XContent_PubOfferingID>
+	<XContent_folder>
+		xContent
+	</XContent_folder>
+	<XContent_title>
+		Fable III
+	</XContent_title>
+	<description>
+		DLC xlive removal
+	</description>
+	<package>
+		<bankName>
+			DLC.bnk
+		</bankName>
+		<premiumContentMask>
+			0
+		</premiumContentMask>
+		<contentsDescription>
+			DLC xlive removal
+		</contentsDescription>
+		<isRequired>
+			True
+		</isRequired>
+		<dependencies>
+			
+		</dependencies>
+		<mountOrder>
+			9050
+		</mountOrder>
+		<canIgnoreMountOrder>
+			False
+		</canIgnoreMountOrder>
+		<name>
+			DLC_xlive_removal
+		</name>
+		<needsRestart>
+			False
+		</needsRestart>
+		<installContentMask>
+			0
+		</installContentMask>
+		<packageUniqueId>
+			90
+		</packageUniqueId>
+		<version>
+			1.0
+		</version>
+		<deployment_folder>
+			Mod\
+		</deployment_folder>
+	</package>
+</packageCollection>

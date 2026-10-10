@@ -1,0 +1,83 @@
+name: release
+
+# Manual release: Actions -> release -> Run workflow.
+# Version comes from src/version.h (single source of truth). If release
+# v<version> already exists the run succeeds quietly without doing anything.
+# The tag is created automatically on first release of a version.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build + attach release assets
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version from src/version.h
+        id: version
+        shell: pwsh
+        run: |
+          $m = [regex]::Match((Get-Content src/version.h -Raw), '#define XLIVE_UNIFIED_VERSION "([^"]+)"')
+          if (-not $m.Success) { throw "XLIVE_UNIFIED_VERSION not found in src/version.h" }
+          $ver = $m.Groups[1].Value
+          if ($ver -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') { throw "bad version: $ver" }
+          "version=$ver" >> $env:GITHUB_OUTPUT
+          "tag=v$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "releasing v$ver"
+
+      - name: Skip if release already exists
+        id: check
+        shell: pwsh
+        run: |
+          gh release view "${{ steps.version.outputs.tag }}" --json tagName >$null 2>&1
+          if ($LASTEXITCODE -eq 0) { "exists=true" >> $env:GITHUB_OUTPUT } else { "exists=false" >> $env:GITHUB_OUTPUT }
+          exit 0 # gh's 1 (not found) must not fail the step; the flag gates the rest
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: steps.check.outputs.exists != 'true'
+        with:
+          arch: x86
+
+      - name: Build xlive.dll
+        if: steps.check.outputs.exists != 'true'
+        run: >
+          cl /LD /O2 /W3 /WX /std:clatest /D_CRT_SECURE_NO_WARNINGS
+          /Fe:xlive.dll src\*.c src\xlive.def
+          ws2_32.lib shell32.lib user32.lib
+
+      - name: Verify exports (fail on any mismatch)
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          pip install pefile
+          python scripts\check_exports.py xlive.dll
+
+      - name: Stage package
+        if: steps.check.outputs.exists != 'true'
+        shell: pwsh
+        run: |
+          mkdir dist
+          copy xlive.dll dist\
+          copy src\xlive.ini dist\
+          copy scripts\fetch-dlc.bat dist\
+          (Get-FileHash dist\xlive.dll -Algorithm SHA256).Hash | Out-File dist\xlive.dll.sha256 -NoNewline
+
+      - name: Publish release (creates tag v<version>)
+        if: steps.check.outputs.exists != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: |
+            dist/xlive.dll
+            dist/xlive.ini
+            dist/fetch-dlc.bat
+            dist/xlive.dll.sha256
+          generate_release_notes: true
+
+      - name: Report skip
+        if: steps.check.outputs.exists == 'true'
+        shell: pwsh
+        run: Write-Host "Release ${{ steps.version.outputs.tag }} already exists — nothing to do."
