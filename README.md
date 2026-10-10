@@ -10,6 +10,10 @@ disabler — one DLL, one INI, no dead online services involved.
 
 ## Quick start
 
+**Players: start with [docs/GUIDE.md](docs/GUIDE.md)** — install the release
+DLL, fetch the DLC with one script, bind your save. The rest of this file is
+for builders.
+
 ```sh
 # reproducible build (Linux / macOS / WSL — needs Nix with flakes)
 nix build .#xlive   # → ./result/xlive.dll + xlive.ini

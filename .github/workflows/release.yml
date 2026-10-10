@@ -63,6 +63,7 @@ jobs:
           copy xlive.dll dist\
           copy src\xlive.ini dist\
           copy scripts\fetch-dlc.bat dist\
+          copy scripts\fetch-dlc.sh dist\
           (Get-FileHash dist\xlive.dll -Algorithm SHA256).Hash | Out-File dist\xlive.dll.sha256 -NoNewline
 
       - name: Publish release (creates tag v<version>)
@@ -74,6 +75,7 @@ jobs:
             dist/xlive.dll
             dist/xlive.ini
             dist/fetch-dlc.bat
+            dist/fetch-dlc.sh
             dist/xlive.dll.sha256
           generate_release_notes: true
 
