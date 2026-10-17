@@ -8,14 +8,16 @@
 DWORD WINAPI XLiveInitialize(void)
 {
     EnsureInitialized();
+    RestoreLoaderPatch();
     TraceLine(L"XLiveInitialize  (a1 = %X)", 0);
     return 0; /* S_OK — always "signed in" locally */
 }
 
-DWORD WINAPI XLiveInitializeEx(void *pXii)
+DWORD WINAPI XLiveInitializeEx(void *pXii, void *pOverlapped)
 {
-    (void)pXii;
+    (void)pXii; (void)pOverlapped;
     EnsureInitialized();
+    RestoreLoaderPatch(); /* boot gate consumed the patch by now */
     TraceLine(L"XLiveInitializeEx");
     return 0;
 }

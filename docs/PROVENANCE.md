@@ -56,13 +56,23 @@ published either; only this unified implementation is.
 
 ## Known uncertainties
 
-- Uncalled-by-the-game stubs share one `StubSuccess` callee; stdcall arity on
-  those paths is binding surface, not verified behavior (same posture as
-  xLiveLess's own `XLiveLess_5xxx` placeholders).
+- Stdcall arity and return values for the game-called surface replicate
+  Timeslip v0.11 exactly (RET N per export verified against its bodies in
+  Ghidra; DebugBreak-tail shims mark the never-called remainder). Two
+  Timeslip-exact behaviors proved load-bearing in testing and are ported
+  verbatim: `XUserGetSigninInfo` fills `lo/hi/state/guest/name@+0x18`
+  (a `strncpy`-style padded copy overflows the game's 40-byte caller
+  buffer and trips its /GS check — copy must stop at the null), and
+  `XHVCreateEngine` returns a pointer to a 24-entry method table whose
+  slot 16 returns -1 with `ret 4` (a NULL inner pointer AVs the game's
+  first engine call). Uncalled-by-the-game stubs share `StubSuccess`.
 - LoaderPatch target (`Fable3.exe + 0x21567D`, single zero byte) is inferred
   from disassembly + decompiler agreement and guarded by exact exe-size check;
-  verify with a debugger before enabling.
+  verify with a debugger before enabling. Mode 2 (self-healing: restore on
+  first `XLiveInitialize[Ex]`) verified live — patched byte present for the
+  boot gate, pristine (`0x68`) again <1s later, so later SecuROM scans stay
+  quiet (mode 1 trips the "pirated copy" notice + forced low detail).
 - `content.xbx` binary parse is represented as folder-presence + ContentID
   trace; byte-level format details were not fully recovered.
-- 16-digit save XUIDs exceed 32 bits; only the low DWORD is stored (matches
-  observed slots — confirm against your save id).
+- 16-digit save XUIDs exceed 32 bits; both halves are kept (`xuid` +
+  `xuidHigh`, scaled by (index+1) per Timeslip) so saves bind correctly.

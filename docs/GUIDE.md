@@ -36,7 +36,8 @@ safe: finished packs are skipped.
 
 1. Put `fetch-dlc.bat` (from the release) anywhere — the Fable 3 folder is
    simplest — and double-click it. (Needs Windows 10+; `curl`/`expand` are
-   built in.) To target a non-Steam install, run it with the folder as an
+   built in.) From a PowerShell prompt, use `fetch-dlc.ps1` instead.
+   To target a non-Steam install, run it with the folder as an
    argument instead.
 2. Wait for the three downloads + `done.` summary.
 
@@ -69,7 +70,8 @@ The DLL keys saves to the profile in `xlive.ini`, so point it at your save:
      `/home/deck/.local/share/Steam/steamapps/compatdata/105400/pfx/drive_c/users/steamuser/Saved Games/Lionhead Studios/Fable 3/`
 2. Open `xlive.ini` (the one next to `fable3.exe`), find
    `profile xuid 1 = 1122334400000000`, replace the number with your save
-   folder's name, save the file.
+   folder's name verbatim — it's hex, paste as-is (e.g. `1000100010001000`
+   binds hi/lo `10001000`, matching the save). Save the file.
 
 ## Part 4 — check and troubleshoot
 
@@ -82,6 +84,6 @@ the dog lays, mean everything enumerated correctly.
 - **Save won't load?** The XUID in step 2 of Part 3 must match the save folder
   exactly.
 - **Something else?** Set `debug log = 1` in `xlive.ini`, reproduce, and read
-  `xlive_trace.log` next to the exe — include it if you open an issue.
+  `%TEMP%\xlive_trace.log` — include it if you open an issue.
 
 Enjoy! :)

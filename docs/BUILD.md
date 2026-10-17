@@ -108,5 +108,5 @@ EOF
 3. DLC packs: one folder per pack under `<game>\DLC\` (e.g. `01_Understone`,
    `02_TraitorsKeep`, `03_InquisitorsPack`), each with its content payload.
 4. Run. Checklist: boots to menu · no GFWL screens · save loads · Sanctuary
-   gifts (DLC) present · `debug log = 1` produces `xlive_trace.log` if you need
-   diagnostics. No outbound LIVE traffic is expected.
+   gifts (DLC) present · `debug log = 1` produces `%TEMP%\xlive_trace.log`
+   if you need diagnostics. No outbound LIVE traffic is expected.

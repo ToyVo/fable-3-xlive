@@ -19,6 +19,7 @@
  */
 #include "xlive.h"
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_DLC 64
 
@@ -78,42 +79,82 @@ void RefreshDlcList(int contentNum)
     FindClose(h);
 }
 
-DWORD WINAPI XContentCreateEnumerator(DWORD a1, DWORD a2, DWORD a3, DWORD *a4)
+DWORD WINAPI XContentCreateEnumerator(DWORD a1, DWORD a2, DWORD *a3, DWORD *a4)
 {
-    (void)a1; (void)a2; (void)a3;
+    (void)a1; (void)a2;
     EnsureInitialized();
     RefreshDlcList(0);
+    /* No packs on disk: Timeslip failure shape (UseDLC==0: *p3=0,
+     * *p4=-1, return -1). The game handles failure by skipping content;
+     * reporting success-with-zero sends it down an untested path. */
+    if (g_dlcCount <= 0) {
+        if (a3) *a3 = 0;
+        if (a4) *a4 = 0xFFFFFFFFu;
+        TraceLine(L"XContentCreateEnumerator -> none, failing");
+        return 0xFFFFFFFFu;
+    }
     TraceLine(L"XContentCreateEnumerator -> %d entries", g_dlcCount);
-    if (a4) *a4 = (DWORD)g_dlcCount;
+    if (a3) *a3 = 0x200;
+    if (a4) *a4 = 0xFFFFFFFFu;
     return 0;
 }
 
-DWORD WINAPI XContentCreatePackage(DWORD a1, DWORD *a2, void *a3)
+DWORD WINAPI XContentCreatePackage(DWORD a1, DWORD *a2, void *a3, DWORD a4)
 {
     EnsureInitialized();
     TraceLine(L"- ContentNum = %d", a2 ? (int)*a2 : -1);
     RefreshDlcList(a2 ? (int)*a2 : 0);
-    (void)a1; (void)a3;
+    (void)a1; (void)a3; (void)a4;
     return 0;
 }
 
 DWORD WINAPI XLiveContentGetPath(DWORD a1, DWORD *a2, wchar_t *out, DWORD *outLen)
 {
+    int idx = 0;
     EnsureInitialized();
+    TraceLine(L"XLiveContentGetPath(num=%d)", a2 ? (int)*a2 : -1);
     RefreshDlcList(a2 ? (int)*a2 : 0);
     (void)a1;
-    if (out && outLen && *outLen > 0) {
-        wcsncpy_s(out, *outLen, g_dlc[0].dir, _TRUNCATE);
-        TraceLine(L"=== ContentID = %s", g_dlc[0].contentId);
+    /* The game queries once per pack; select by content number so each
+     * pack resolves to its own folder (bounded — never past the scan). */
+    if (a2 && *a2 < (DWORD)g_dlcCount)
+        idx = (int)*a2;
+    if (out && outLen && *outLen > 0 && g_dlcCount > 0) {
+        wcsncpy_s(out, *outLen, g_dlc[idx].dir, _TRUNCATE);
+        TraceLine(L"=== ContentID = %s", g_dlc[idx].contentId);
     }
     return 0;
 }
 
 DWORD WINAPI XEnumerate(HANDLE hEnum, void *buf, DWORD bufLen, DWORD *retLen, void *ov)
 {
-    (void)hEnum; (void)buf; (void)bufLen; (void)ov;
+    DWORD *d = (DWORD *)buf;
+    int i;
+    (void)hEnum; (void)ov;
     EnsureInitialized();
-    if (retLen) *retLen = (DWORD)g_dlcCount;
-    TraceLine(L"- [%d] DLC = %08X", 0, (unsigned)g_dlcCount);
+    if (g_dlcCount > 0) {
+        /* Packs present: report the scanned count (content bytes are read
+         * via XLiveContentGetPath per entry; validated with DLC packs). */
+        if (retLen) *retLen = (DWORD)g_dlcCount;
+        TraceLine(L"- [%d] DLC = %08X", 0, (unsigned)g_dlcCount);
+        return 0;
+    }
+    /* No packs: Timeslip UseDLC==0 shape (f102 @0x10009ef0) — 0x200-byte
+     * zeroed buffer holding 10 dummy 8-dword entries, count 10. */
+    if (d && bufLen >= 0x200) {
+        memset(d, 0, 0x200);
+        for (i = 0; i < 10; i++) {
+            d[i * 8] = (DWORD)i;
+            d[i * 8 + 1] = (DWORD)i;
+            d[i * 8 + 2] = (DWORD)i;
+            d[i * 8 + 3] = (DWORD)i;
+            d[i * 8 + 4] = (DWORD)i;
+            d[i * 8 + 5] = (DWORD)i;
+            d[i * 8 + 6] = (DWORD)i;
+            d[i * 8 + 7] = (DWORD)i;
+        }
+    }
+    if (retLen) *retLen = 10;
+    TraceLine(L"- [0] DLC = %08X (dummy)", 10u);
     return 0;
 }

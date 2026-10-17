@@ -5,17 +5,25 @@
  */
 #include "xlive.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 
 static FILE *g_trace;
 
 int DebugEnabled(void) { return g_live.debugLog != 0; }
 
+/* Trace goes to %TEMP%\xlive_trace.log — deliberately NOT next to the
+ * exe: a multi-megabyte log file growing inside the game directory
+ * trips SecuROM's file scans (the "pirated copy" notice). */
 void TraceOpen(void)
 {
+    wchar_t path[MAX_PATH * 2];
     if (!DebugEnabled())
         return;
-    _wfopen_s(&g_trace, L"xlive_trace.log", L"a,ccs=UTF-16LE");
+    if (!GetTempPathW(ARRAYSIZE(path) - 32, path))
+        return;
+    wcscat_s(path, ARRAYSIZE(path), L"xlive_trace.log");
+    _wfopen_s(&g_trace, path, L"a,ccs=UTF-16LE");
     if (g_trace)
         fwprintf(g_trace, TRACE_BANNER_FMT, XLIVE_UNIFIED_VERSION);
 }

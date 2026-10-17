@@ -72,3 +72,24 @@ gives you instead of blind trust:
   `DLC\` (`0x1001ffd8`), `\content.xbx` (`0x1001ffe4`), `- DLC%d = %s`,
   `=== ContentID = %s`, `- [%d] DLC = %08X` (in `XEnumerate`).
 - Users: `XUserGetName` (`0x10004cb0`), `XUserGetSigninInfo` (`0x10004e30`).
+
+## Verified against the game (Oct 2026, Timeslip v0.11 as oracle)
+
+Reproducing Timeslip's LoaderPatch byte alone boots past the launcher
+check but the game then dies: every called export must also match its
+stdcall arity (`RET N` per shim, read in Ghidra) and return value, or the
+caller corrupts its stack on return (`XLiveInitializeEx` takes 2 args,
+not 1 — that alone segfaulted the game). Three behaviors needed
+byte-exact ports before the game reached its menu:
+
+- `XUserGetSigninInfo` (f016): `lo/hi/state/guest` + name at **+0x18**
+  (not +0x10). A padded copy overflows the game's 40-byte caller buffer
+  and trips its `/GS` cookie check (misread as a SecuROM kill: the
+  cookie-report path ends in `TerminateProcess(_, 0xC0000409)`).
+- `XHVCreateEngine` (f5008): `*out` must point at a 24-entry method
+  table whose slot `+0x40` returns -1 with `ret 4` (Timeslip's table
+  bottoms out at a swallowed-`int3` stub). A NULL inner pointer AVs the
+  game's first engine call.
+- `XContentCreateEnumerator`: with no `DLC\` packs present, fail like
+  Timeslip (`*p3 = 0`, `*p4 = -1`, return -1). Success-with-zero sends
+  the game down an untested path.

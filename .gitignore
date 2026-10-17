@@ -20,3 +20,4 @@ reference/
 __pycache__/
 .dlc-cache/
 .DS_Store
+dist

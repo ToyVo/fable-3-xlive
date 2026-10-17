@@ -23,9 +23,18 @@ if "%FORCE%"=="" set "FORCE=0"
 set "DLC_DIR=%GAME_DIR%\DLC"
 set "CAB_BASE=http://download.xbox.com/content/4d53090a"
 
-where curl >nul 2>nul
-if errorlevel 1 (
-  echo error: curl.exe not found (needs Windows 10+ or curl on PATH) >&2
+rem Pin System32 tools by absolute path: under MSYS2/git-bash, PATH can
+rem shadow `expand` with the unrelated coreutils text tool of the same
+rem name, which silently breaks the unpack step below.
+set "SYS32=%SystemRoot%\System32"
+set "CURL=%SYS32%\curl.exe"
+set "EXPAND=%SYS32%\expand.exe"
+if not exist "%CURL%" (
+  echo error: curl.exe not found at "%CURL%" (needs Windows 10+) >&2
+  exit /b 1
+)
+if not exist "%EXPAND%" (
+  echo error: expand.exe not found at "%EXPAND%" >&2
   exit /b 1
 )
 
@@ -71,7 +80,7 @@ if "!got!"=="%want%" (
   echo   have: cached cab, size OK
 ) else (
   echo   get:  %CAB_BASE%/%cab%.cab
-  curl -fSL --retry 3 -C - -o "%cabfile%" "%CAB_BASE%/%cab%.cab" || exit /b 1
+  "%CURL%" -fSL --retry 3 -C - -o "%cabfile%" "%CAB_BASE%/%cab%.cab" || exit /b 1
 )
 set "got=0"
 for %%A in ("%cabfile%") do set "got=%%~zA"
@@ -90,7 +99,7 @@ if not "%sha%"=="" (
 )
 if not exist "%dest%" mkdir "%dest%"
 echo   unpack -^> DLC\%dir%
-expand "%cabfile%" -F:* "%dest%" >nul || exit /b 1
+"%EXPAND%" "%cabfile%" -F:* "%dest%" >nul || exit /b 1
 if not exist "%dest%\content.xbx" (
   echo error: content.xbx missing after unpack >&2
   exit /b 1

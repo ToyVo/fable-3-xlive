@@ -1,7 +1,8 @@
 # DLC setup (automated)
 
-`scripts/fetch-dlc.sh` (Linux/macOS, mainly Steam Deck) and
-`scripts/fetch-dlc.bat` (Windows) do guide steps 1–5 for you: base stub pack,
+`scripts/fetch-dlc.sh` (Linux/macOS, mainly Steam Deck),
+`scripts/fetch-dlc.bat` (Windows CMD) and `scripts/fetch-dlc.ps1`
+(Windows PowerShell) do guide steps 1–5 for you: base stub pack,
 three Xbox CDN downloads, extraction, layout, verification.
 
 ```sh
@@ -10,8 +11,15 @@ three Xbox CDN downloads, extraction, layout, verification.
 ```
 
 ```bat
-:: Windows (defaults to %ProgramFiles(x86)%\Steam\steamapps\common\Fable 3)
+:: Windows CMD (defaults to %ProgramFiles(x86)%\Steam\steamapps\common\Fable 3)
 scripts\fetch-dlc.bat [GAME_DIR]
+```
+
+```powershell
+# Windows PowerShell alternative (same defaults, same cache layout)
+# NOTE: run the .ps1 rather than the .bat from a PowerShell prompt —
+# and never rely on a bare `expand` there: MSYS2/git-bash shadows it.
+powershell -ExecutionPolicy Bypass -File scripts/fetch-dlc.ps1 [-GameDir ...] [-Force]
 ```
 
 Both are idempotent (skip finished packs) and resumable (big files!), with
@@ -36,8 +44,13 @@ content enumerator scans (`docs/COMPARISON.md`).
 
 - `.sh`: `curl` (or `wget`) + one of `cabextract`, `7z`/`7zz`, `bsdtar`
   (Deck: `sudo pacman -S cabextract`; macOS ships `bsdtar`).
-- `.bat`: Windows 10+ (`curl.exe` + `expand.exe` are built in; `certutil`
-  for hashing).
+- `.bat` / `.ps1`: Windows 10+ only. Both pin
+  `%SystemRoot%\System32\curl.exe` + `expand.exe` by absolute path —
+  a bare `expand` breaks under MSYS2/git-bash, where PATH shadows it
+  with the unrelated coreutils text tool of the same name (this was the
+  actual `fetch-dlc.bat` failure). The `.ps1` hashes with .NET instead
+  of `certutil`/`Get-FileHash` (the latter is missing on some PS 5.1
+  hosts).
 
 ## Verification
 

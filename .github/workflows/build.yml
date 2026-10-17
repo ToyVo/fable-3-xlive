@@ -50,7 +50,7 @@ jobs:
           mkdir -p dist
           cd src
           i686-w64-mingw32-gcc -shared -O2 -Wall -Werror -o ../dist/xlive.dll *.c xlive.def \
-            -lws2_32 -lshell32 -luser32 \
+            -lws2_32 -lshell32 -luser32 -static-libgcc \
             -Wl,--enable-stdcall-fixup -Wl,--kill-at
           cp xlive.ini ../dist/
           ls -l ../dist/xlive.dll

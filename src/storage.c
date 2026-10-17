@@ -10,6 +10,7 @@ DWORD WINAPI XStorageEnumerate(DWORD a1, void *a2, DWORD a3, DWORD *a4)
 {
     (void)a1; (void)a2; (void)a3;
     EnsureInitialized();
+    TraceLine(L"XStorageEnumerate");
     if (a4) *a4 = 0;
     return 0;
 }
@@ -18,6 +19,7 @@ DWORD WINAPI XStorageUploadFromMemory(void *a1, void *a2, void *a3)
 {
     (void)a1; (void)a2; (void)a3;
     EnsureInitialized();
+    TraceLine(L"XStorageUploadFromMemory");
     return 0;
 }
 
@@ -25,6 +27,7 @@ DWORD WINAPI XStorageDownloadToMemory(void *a1, void *a2, void *a3)
 {
     (void)a1; (void)a2; (void)a3;
     EnsureInitialized();
+    TraceLine(L"XStorageDownloadToMemory");
     return 0;
 }
 
@@ -32,5 +35,6 @@ DWORD WINAPI XStorageDelete(void *a1)
 {
     (void)a1;
     EnsureInitialized();
+    TraceLine(L"XStorageDelete");
     return 0;
 }

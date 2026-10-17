@@ -1,5 +1,8 @@
 {
   description = "Fable 3 patch - Ghidra + ReVa MCP reverse-engineering env";
+  # NOTE (Windows): Nix has no native Windows port, so this flake only
+  # covers Linux/macOS (/WSL). For native Windows, run
+  # scripts/setup-ghidra-mcp-windows.ps1 — see docs/GHIDRA.md.
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -53,7 +56,7 @@
             buildPhase = ''
               runHook preBuild
               $CC -shared -O2 -Wall -o xlive.dll *.c xlive.def \
-                -lws2_32 -lshell32 -luser32 \
+                -lws2_32 -lshell32 -luser32 -static-libgcc \
                 -Wl,--enable-stdcall-fixup -Wl,--kill-at
               runHook postBuild
             '';

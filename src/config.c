@@ -45,10 +45,19 @@ static void ParseLine(char *line)
         if (strstr(line, xuidKeys[i]) == line) {
             eq = strchr(line, '=');
             if (eq) {
-                /* 16-digit folder ids exceed 32 bits; keep low 32, matching
-                 * observed DWORD slots (verify against your save id). */
-                unsigned long long v = strtoull(eq + 1, NULL, 10);
-                g_live.profiles[i].xuid = (DWORD)v;
+                /* Save-folder ids are 16 HEX digits (a 64-bit XUID, e.g.
+                 * 1000100010001000 = hi 10001000 / lo 10001000, matching
+                 * Timeslip's xuidh/xuidl pair). Parse base 16 so the
+                 * folder name pastes in verbatim (optional 0x ok).
+                 * SigninInfo scales lo/hi by (index+1); saves key off
+                 * both halves, so the split must be exact. */
+                while (*++eq == ' ' || *eq == '\t')
+                    ;
+                {
+                    unsigned long long v = strtoull(eq, NULL, 16);
+                    g_live.profiles[i].xuid = (DWORD)v;
+                    g_live.profiles[i].xuidHigh = (DWORD)(v >> 32);
+                }
             }
             return;
         }
@@ -69,14 +78,39 @@ static void ParseLine(char *line)
         sscanf(eq + 1, "%d", &g_live.loaderPatch);
 }
 
-static void ParseFile(FILE *f)
+/* Static-buffered INI load (no CRT heap): reads the whole file with plain
+ * Win32 calls and parses lines in place. Keeps boot allocation-free. */
+static void ParseBuffer(char *buf)
 {
-    char line[256];
-    while (!feof(f)) {
-        if (!fgets(line, sizeof(line), f))
-            break;
+    char *line = buf;
+    for (;;) {
+        char *nl = strchr(line, '\n');
+        if (nl) *nl = '\0';
         ParseLine(line);
+        if (!nl) break;
+        line = nl + 1;
     }
+}
+
+static int LoadIniFile(const char *path)
+{
+    HANDLE h;
+    static char buf[4096];
+    DWORD got = 0, total = 0;
+    h = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    NULL, OPEN_EXISTING, 0, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return 0;
+    while (total < sizeof(buf) - 1) {
+        if (!ReadFile(h, buf + total, (DWORD)(sizeof(buf) - 1 - total),
+                      &got, NULL) || got == 0)
+            break;
+        total += got;
+    }
+    CloseHandle(h);
+    buf[total] = '\0';
+    ParseBuffer(buf);
+    return 1;
 }
 
 /* Timeslip fallback: hex-aware xuidl/xuidh + profile (FUN_10009350). */
@@ -112,19 +146,18 @@ static void ImportFakeXliveIni(void)
         fclose(f);
     }
     g_live.profiles[0].xuid = (DWORD)lo;
-    (void)hi; /* high bits have no offline slot; low part selects the save */
+    g_live.profiles[0].xuidHigh = (DWORD)hi;
     if (profile[0])
         strcpy_s(g_live.profiles[0].name, sizeof(g_live.profiles[0].name), profile);
 }
 
 void EnsureInitialized(void)
 {
-    FILE *f;
-
     if (g_live.initialized)
         return;
     g_live.initialized = 1;
-    InitializeCriticalSection(&g_live.lock);
+    /* NOTE: no InitializeCriticalSection — g_live.lock is unused, and
+     * skipping it keeps boot allocation-free (see LoadIniFile). */
 
     strcpy_s(g_live.profiles[0].name, sizeof(g_live.profiles[0].name), "Player1");
     strcpy_s(g_live.profiles[1].name, sizeof(g_live.profiles[1].name), "Player2");
@@ -136,13 +169,7 @@ void EnsureInitialized(void)
 
     g_live.game = GetModuleHandleA("Fable3.exe");
 
-    f = fopen(INI_PRIMARY, "r");
-    if (!f) f = fopen(INI_FALLBACK, "r");
-    if (f) {
-        ParseFile(f);
-        fclose(f);
-    } else {
+    if (!LoadIniFile(INI_PRIMARY) && !LoadIniFile(INI_FALLBACK))
         ImportFakeXliveIni();
-    }
     TraceOpen();
 }

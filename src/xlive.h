@@ -29,7 +29,8 @@
 typedef struct {
     char  name[PROFILE_NAME_LEN + 1];
     DWORD signin;
-    DWORD xuid;      /* low 32 bits; high bits zero offline */
+    DWORD xuid;      /* low 32 bits of the decimal ini value */
+    DWORD xuidHigh;  /* high 32 bits (Timeslip xuidh; selects saves) */
 } LiveProfile;
 
 typedef struct {
@@ -40,7 +41,7 @@ typedef struct {
     char        saveDir[SAVE_DIR_LEN];
     int         debugLog;
     int         showMessages;  /* Timeslip: 0 ignore, 1 MessageBox, 2 in-game/trace */
-    int         loaderPatch;   /* Timeslip: 0 off (recommended), 1 launcher-check patch */
+    int         loaderPatch;   /* 0 off, 1 permanent patch, 2 self-healing */
     HMODULE     self;
     HMODULE     game;          /* Fable3.exe module */
 } LiveConfig;
@@ -60,6 +61,7 @@ void XliveMessage(const char *msg);
 
 /* loader_patch.c */
 void ApplyLoaderPatchIfEnabled(void);
+void RestoreLoaderPatch(void);
 
 /* content.c */
 void RefreshDlcList(int contentNum);

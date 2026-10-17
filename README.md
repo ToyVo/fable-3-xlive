@@ -35,7 +35,7 @@ documented in [docs/BUILD.md](docs/BUILD.md).
   disk; WinSock calls pass through to real WS2_32. Every `XShow*UI` returns
   success silently — no GFWL screens.
 - `ShowMessages` (0 ignore / 1 MessageBox / 2 log) and optional trace log
-  (`debug log = 1` → `xlive_trace.log`).
+  (`debug log = 1` → `%TEMP%\xlive_trace.log`).
 - `LoaderPatch` (default **0/off**): opt-in single-byte launcher-check removal
   for the exact 1.1.1.3 exe, size-guarded. Test-only — it provokes SecuROM
   countermeasures (low-detail mode). Leave it off for real play.
@@ -45,7 +45,7 @@ documented in [docs/BUILD.md](docs/BUILD.md).
 Details and the full behavior side-by-side that motivated this unification:
 [docs/COMPARISON.md](docs/COMPARISON.md). DLC packs (Understone, Traitor's
 Keep, Inquisitor's Pack) are fetched and laid out by
-`scripts/fetch-dlc.sh` / `scripts/fetch-dlc.bat` — see [docs/DLC.md](docs/DLC.md).
+`scripts/fetch-dlc.sh` / `scripts/fetch-dlc.bat` / `scripts/fetch-dlc.ps1` — see [docs/DLC.md](docs/DLC.md).
 
 ## Layout
 
@@ -53,8 +53,9 @@ Keep, Inquisitor's Pack) are fetched and laid out by
 src/            C sources, xlive.h, xlive.def (249 exports, ordinals pinned),
                 xlive.ini (shipped default config), tools/gen_def.py
 docs/           BUILD.md (Windows/Linux/macOS), DLC.md, PROVENANCE.md,
-                COMPARISON.md
-scripts/        fetch-dlc.sh / fetch-dlc.bat (DLC download + layout)
+                COMPARISON.md, GHIDRA.md (Ghidra+ReVa MCP: Nix and Windows)
+scripts/        fetch-dlc.sh / fetch-dlc.bat / fetch-dlc.ps1 (DLC download + layout),
+                setup-ghidra-mcp-windows.ps1 (native Windows RE env)
 assets/         90_DLC_xlive_removal/ base stub pack (vendored)
 flake.nix       nix build .#xlive-unified (i686 Windows cross-compile)
 ```
